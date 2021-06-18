@@ -1,13 +1,12 @@
 /*!
-
-1. Rust通过命名管道进行进程间通信(IPC)
+2021-06-17_Rust通过命名管道进行进程间通信直播录像:
 1. stat,mkfifo,__errno_location,strerror_r等系统调用的详细讲解和错误调试方法
 2. nix和标准库是怎么处理FFI调用失败，并解释标准库std::io::Error源码
 3. mkfifo, errno命令的使用场景
 
 Rust管道进程间通信源码: https://github.com/pymongo/mkfifo_named_pipe
-飞书录像: TODO
-b站录像: TODO
+飞书录像: https://meetings.feishu.cn/minutes/obcnindxxd27o5bm2t2cm6z2?from_source=finish_recording
+b站录像: https://www.bilibili.com/video/BV1Lv411W7nX/
 YouTube录像: https://youtu.be/O0jOXlkMBLM
 */
 #![feature(rustc_private)]
@@ -61,7 +60,7 @@ fn my_mkfifo() {
     let mkfifo_res = unsafe { libc::mkfifo(PATH.as_ptr() as _, libc::S_IREAD | libc::S_IWRITE) };
     if mkfifo_res == -1 {
         let errno = unsafe { *libc::__errno_location() };
-        let err_msg_buf  = [0u8; 64];
+        let err_msg_buf  = [0u8; 128];
         unsafe { libc::strerror_r(errno, err_msg_buf.as_ptr() as _,128) };
         let err_msg_buf_len = err_msg_buf.iter().position(|&x| x == b'\0').unwrap();
         let err_msg = unsafe { String::from_utf8_unchecked(err_msg_buf[..err_msg_buf_len].to_vec()) };

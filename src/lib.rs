@@ -26,6 +26,28 @@ pipe/FIFO文件是「橙黄色」
 #![feature(rustc_private)]
 extern crate libc;
 
+
+#[cfg(any(target_os = "freebsd",
+                 target_os = "ios",
+                 target_os = "macos"))] 
+        unsafe fn errno_location() -> *mut libc::c_int {
+            libc::__error()
+        }
+ #[cfg(any(target_os = "android",
+                        target_os = "netbsd",
+                        target_os = "openbsd"))] 
+        unsafe fn errno_location() -> *mut libc::c_int {
+            libc::__errno()
+        }
+ #[cfg(any(target_os = "linux"))] 
+        unsafe fn errno_location() -> *mut libc::c_int {
+            libc::__errno_location()
+        }
+#[cfg(any(target_os = "illumos", target_os = "solaris"))] 
+        unsafe fn errno_location() -> *mut libc::c_int {
+            libc::___errno()
+        }
+
 #[allow(dead_code)]
 const PATH: &str = "/home/w/temp/my_pipe";
 
@@ -42,7 +64,7 @@ fn errno_to_err_msg(errno: i32) -> String {
 #[test]
 fn test_errno_no_such_file_or_directory() {
     let fd = unsafe { libc::open("/tmp/not_exist_file\0".as_ptr() as _, libc::O_RDONLY) };
-    let errno = unsafe { *libc::__errno_location() };
+    let errno = unsafe { *errno_location() };
     dbg!(fd, errno_to_err_msg(errno));
 }
 
@@ -63,7 +85,7 @@ fn my_mkfifo() {
     // permission bit: https://www.gnu.org/software/libc/manual/html_node/Permission-Bits.html
     let mkfifo_res = unsafe { libc::mkfifo(PATH.as_ptr() as _, libc::S_IREAD | libc::S_IWRITE) };
     if mkfifo_res == -1 {
-        let err_msg = errno_to_err_msg(unsafe { *libc::__errno_location() });
+        let err_msg = errno_to_err_msg(unsafe { *errno_location() });
         panic!("syscall error = {}", err_msg);
     }
 }
